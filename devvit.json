@@ -1,0 +1,67 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "appeal-advisor",
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Set Appeal Advisor OpenAI Key",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/set-openai-key"
+      }
+    ]
+  },
+  "forms": {
+    "set-openai-key": "/internal/form/set-openai-key"
+  },
+  "triggers": {
+    "onAppInstall": "/internal/triggers/on-app-install",
+    "onAppUpgrade": "/internal/triggers/on-app-upgrade",
+    "onModMail": "/internal/triggers/on-modmail"
+  },
+  "settings": {
+    "subreddit": {
+        "handlePermanentBansOnly": {
+            "label": "Handle appeals for permanent bans only",
+            "type": "boolean",
+            "defaultValue": true
+        }
+    },
+    "global": {
+      "openAPIKey": {
+        "label": "OpenAPI Key",
+        "type": "string",
+        "isSecret": true
+      },
+      "freeAppealsPerMonth": {
+        "label": "Number of free appeals per month before the OpenAI key is required (resets on the first of each month)",
+        "type": "number",
+        "defaultValue": 5
+      },
+      "openAIModel": {
+        "label": "OpenAI Model to use for appeals",
+        "type": "string",
+        "defaultValue": "gpt-5.4-mini"
+      }
+    }
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build"
+  },
+  "permissions": {
+    "reddit": true,
+    "http": {
+      "domains": [
+        "api.openai.com"
+      ]
+    }
+  },
+  "dev": {
+    "subreddit": "fsvsandbox"
+  }
+}

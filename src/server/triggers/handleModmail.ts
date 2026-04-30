@@ -1,0 +1,76 @@
+import { OnModMailRequest, TriggerResponse } from "@devvit/web/shared";
+import { Context } from "hono";
+import { context, GetConversationResponse, reddit, redis } from "@devvit/web/server";
+import { handleAppeal, ModmailMessage } from "../core";
+import { addMonths } from "date-fns";
+
+export const handleModmail = async (c: Context) => {
+    const modmailRequest = await c.req.json<OnModMailRequest>();
+
+    if (modmailRequest.messageAuthor?.name === context.appSlug) {
+        return c.json<TriggerResponse>({ message: "ignoring message sent by the app itself" }, 200);
+    }
+
+    if (modmailRequest.conversationType !== "sr_user") {
+        return c.json<TriggerResponse>({ message: "conversation is not a user conversation" }, 200);
+    }
+
+    let conversation: GetConversationResponse;
+    try {
+        conversation = await reddit.modMail.getConversation({ conversationId: modmailRequest.conversationId });
+        if (!conversation.conversation) {
+            console.error(`${modmailRequest.messageId}: Conversation ${modmailRequest.conversationId} not found`);
+            return c.json<TriggerResponse>({ message: "conversation not found" }, 404);
+        }
+    } catch (error) {
+        console.error(`${modmailRequest.messageId}: Error fetching conversation ${modmailRequest.conversationId}`, error);
+        console.log(JSON.stringify(modmailRequest, null, 2));
+        return c.json<TriggerResponse>({ message: "error fetching conversation" }, 500);
+    }
+
+    if (!conversation.conversation.participant?.name) {
+        console.log(`${modmailRequest.messageId}: Conversation participant not found for conversation ${modmailRequest.conversationId}`);
+        return c.json<TriggerResponse>({ message: "conversation participant not found" }, 200);
+    }
+
+    const messagesInConversation = Object.values(conversation.conversation.messages);
+    const currentMessage = messagesInConversation.find(message => message.id && modmailRequest.messageId.includes(message.id));
+    if (!currentMessage?.bodyMarkdown) {
+        console.error(`${modmailRequest.messageId}: Current message not found`);
+        return c.json<TriggerResponse>({ message: "current message not found" }, 400);
+    }
+
+    const modmailMessage: ModmailMessage = {
+        conversationId: modmailRequest.conversationId,
+        participant: conversation.conversation.participant.name,
+        messageId: modmailRequest.messageId,
+        messageBody: currentMessage.bodyMarkdown.trim(),
+    };
+
+    // if (currentMessage.author?.name !== modmailMessage.participant) {
+    //     return c.json<TriggerResponse>({ message: "message author is not the participant" }, 200);
+    // }
+
+    const bannedUsers = await reddit.getBannedUsers({
+        subredditName: context.subredditName,
+        username: modmailMessage.participant,
+    }).all();
+
+    if (bannedUsers.length === 0) {
+        return c.json<TriggerResponse>({ message: "participant is not banned" }, 200);
+    }
+
+    // const firstMessageFromParticipant = messagesInConversation.find(message => message.author?.name === modmailMessage.participant);
+    // if (firstMessageFromParticipant?.id !== currentMessage.id) {
+    //     return c.json<TriggerResponse>({ message: "ignoring message because it's not the first message from the participant" }, 200);
+    // }
+
+    // const handledKey = `handled:${modmailRequest.messageId}`;
+    // if (await redis.exists(handledKey)) {
+    //     console.warn(`${modmailRequest.messageId}: Duplicate trigger, ignoring.`);
+    //     return c.json<TriggerResponse>({ message: "modmail message has already been handled" }, 200);
+    // }
+    // await redis.set(handledKey, "true", { expiration: addMonths(new Date(), 1) });
+
+    return c.json<TriggerResponse>(await handleAppeal(modmailMessage), 200);
+};
