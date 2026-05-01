@@ -25,10 +25,11 @@
   },
   "settings": {
     "subreddit": {
-        "handlePermanentBansOnly": {
-            "label": "Handle appeals for permanent bans only",
+        "handleAppealsAutomatically": {
+            "label": "Handle appeals automatically",
+            "helpText": "If turned off, summon this app using u/appeal-advisor",
             "type": "boolean",
-            "defaultValue": true
+            "defaultValue": false
         }
     },
     "global": {

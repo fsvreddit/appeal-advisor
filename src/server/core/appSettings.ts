@@ -1,6 +1,6 @@
 export enum AppSetting {
     // Sub-scoped settings
-    HandlePermanentBansOnly = "handlePermanentBansOnly",
+    HandleAppealsAutomatically = "handleAppealsAutomatically",
 
     // App-scoped settings
     GlobalAPIKey = "openAPIKey",

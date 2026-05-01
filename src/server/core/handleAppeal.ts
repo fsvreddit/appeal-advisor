@@ -111,7 +111,7 @@ async function getUserHistoryForAppeal (username: string) {
     }
 }
 
-export async function handleAppeal (modmailMessage: ModmailMessage): Promise<TriggerResponse> {
+export async function handleAppeal (messageBody: string, modmailMessage: ModmailMessage): Promise<TriggerResponse> {
     console.log(`Handling appeal for conversation ${modmailMessage.conversationId} from participant ${modmailMessage.participant}`);
 
     const userHistory = await getUserHistoryForAppeal(modmailMessage.participant);
@@ -119,12 +119,15 @@ export async function handleAppeal (modmailMessage: ModmailMessage): Promise<Tri
         console.log(`User ${modmailMessage.participant} may be shadowbanned or suspended.`);
     }
 
-    let prompt = basePrompt.replace("{{appealMessage}}", modmailMessage.messageBody);
+    let prompt = basePrompt.replace("{{appealMessage}}", messageBody);
 
     const rules = await reddit.getRules(context.subredditName);
     if (rules.length > 0) {
         prompt += "\n\nSubreddit rules:\n\n";
-        prompt += rules.map(rule => `* ${rule.shortName}: ${rule.description}`).join("\n");
+        for (const rule of rules) {
+            prompt += `**${rule.shortName}**\n\n`;
+            prompt += `> ${rule.description.split("\n").map(line => `> ${line}`).join("\n")}\n\n`;
+        }
     }
 
     const modNotes = await reddit.getModNotes({
@@ -135,7 +138,10 @@ export async function handleAppeal (modmailMessage: ModmailMessage): Promise<Tri
 
     if (modNotes.length > 0) {
         prompt += "\n\nNotes about the user left by moderators:\n\n";
-        prompt += modNotes.map(note => `* ${format(note.createdAt, "yyyy-MM-dd")}: ${note.userNote?.note}`).join("\n");
+        for (const note of modNotes.filter(note => note.userNote?.note)) {
+            prompt += `* ${format(note.createdAt, "yyyy-MM-dd")}: ${note.userNote?.note}\n`;
+            prompt += `> ${note.userNote?.note?.split("\n").map(line => `> ${line}`).join("\n")}\n\n`;
+        }
     }
 
     prompt += "\n\nJSON containing information about the user and their history:\n\n";

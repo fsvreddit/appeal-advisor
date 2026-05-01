@@ -4,6 +4,37 @@ import { context, GetConversationResponse, reddit, redis } from "@devvit/web/ser
 import { handleAppeal, ModmailMessage } from "../core";
 import { addMonths } from "date-fns";
 
+async function handleAppMention (message: ModmailMessage): Promise<TriggerResponse> {
+    const userMessage = message.messagesInConversation.find(msg => msg.author?.name === message.participant);
+    if (!userMessage?.bodyMarkdown) {
+        return { message: "No message from participant found in conversation." };
+    }
+
+    const bannedUsers = await reddit.getBannedUsers({
+        subredditName: context.subredditName,
+        username: message.participant,
+    }).all();
+
+    if (bannedUsers.length === 0) {
+        await reddit.modMail.reply({
+            conversationId: message.conversationId,
+            body: `u/${message.participant} is not currently banned from r/${context.subredditName} so appeal analysis is not necessary.`,
+        });
+        return { message: "participant is not banned" };
+    }
+
+    const moderators = await reddit.getModerators({
+        subredditName: context.subredditName,
+        username: message.messageAuthor,
+    }).all();
+
+    if (moderators.length === 0) {
+        return { message: "message author is not a moderator" };
+    }
+
+    return await handleAppeal(userMessage.bodyMarkdown, message);
+}
+
 export const handleModmail = async (c: Context) => {
     const modmailRequest = await c.req.json<OnModMailRequest>();
 
@@ -44,12 +75,18 @@ export const handleModmail = async (c: Context) => {
         conversationId: modmailRequest.conversationId,
         participant: conversation.conversation.participant.name,
         messageId: modmailRequest.messageId,
+        messageAuthor: currentMessage.author?.name ?? "unknown",
         messageBody: currentMessage.bodyMarkdown.trim(),
+        messagesInConversation,
     };
 
-    // if (currentMessage.author?.name !== modmailMessage.participant) {
-    //     return c.json<TriggerResponse>({ message: "message author is not the participant" }, 200);
-    // }
+    if (currentMessage.bodyMarkdown.includes("u/" + context.appSlug)) {
+        return c.json(await handleAppMention(modmailMessage), 200);
+    }
+
+    if (currentMessage.author?.name !== modmailMessage.participant) {
+        return c.json<TriggerResponse>({ message: "message author is not the participant" }, 200);
+    }
 
     const bannedUsers = await reddit.getBannedUsers({
         subredditName: context.subredditName,
@@ -60,17 +97,21 @@ export const handleModmail = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "participant is not banned" }, 200);
     }
 
-    // const firstMessageFromParticipant = messagesInConversation.find(message => message.author?.name === modmailMessage.participant);
-    // if (firstMessageFromParticipant?.id !== currentMessage.id) {
-    //     return c.json<TriggerResponse>({ message: "ignoring message because it's not the first message from the participant" }, 200);
-    // }
+    const firstMessageFromParticipant = messagesInConversation.find(message => message.author?.name === modmailMessage.participant);
+    if (firstMessageFromParticipant?.id !== currentMessage.id) {
+        return c.json<TriggerResponse>({ message: "ignoring message because it's not the first message from the participant" }, 200);
+    }
 
-    // const handledKey = `handled:${modmailRequest.messageId}`;
-    // if (await redis.exists(handledKey)) {
-    //     console.warn(`${modmailRequest.messageId}: Duplicate trigger, ignoring.`);
-    //     return c.json<TriggerResponse>({ message: "modmail message has already been handled" }, 200);
-    // }
-    // await redis.set(handledKey, "true", { expiration: addMonths(new Date(), 1) });
+    if (!firstMessageFromParticipant?.bodyMarkdown) {
+        return c.json<TriggerResponse>({ message: "first message from participant has no body" }, 200);
+    }
 
-    return c.json<TriggerResponse>(await handleAppeal(modmailMessage), 200);
+    const handledKey = `handled:${modmailRequest.messageId}`;
+    if (await redis.exists(handledKey)) {
+        console.warn(`${modmailRequest.messageId}: Duplicate trigger, ignoring.`);
+        return c.json<TriggerResponse>({ message: "modmail message has already been handled" }, 200);
+    }
+    await redis.set(handledKey, "true", { expiration: addMonths(new Date(), 1) });
+
+    return c.json<TriggerResponse>(await handleAppeal(firstMessageFromParticipant.bodyMarkdown, modmailMessage), 200);
 };
