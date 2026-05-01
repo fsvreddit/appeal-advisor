@@ -164,7 +164,7 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
 
     await reddit.modMail.reply({
         conversationId: modmailMessage.conversationId,
-        body: `**Appeal Advisor Recommendation:**\n\n${response.output_text}`,
+        body: `${response.output_text}\n\n*This response is AI generated, and may not be 100% accurate. Use your judgment as a moderator to make the final decision on the appeal.*`,
         isInternal: true,
     });
 
