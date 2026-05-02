@@ -35,6 +35,10 @@ interface PostInfo {
     url?: string;
 }
 
+function blockquoteText (text: string): string {
+    return text.split("\n").map(line => `> ${line}`).join("\n");
+}
+
 async function getUserHistoryForAppeal (username: string) {
     try {
         const user = await reddit.getUserByUsername(username);
