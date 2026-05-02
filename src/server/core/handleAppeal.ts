@@ -123,14 +123,14 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
         console.log(`User ${modmailMessage.participant} may be shadowbanned or suspended.`);
     }
 
-    let prompt = basePrompt.replace("{{appealMessage}}", messageBody);
+    let prompt = basePrompt.replace("{{appealMessage}}", blockquoteText(messageBody));
 
     const rules = await reddit.getRules(context.subredditName);
     if (rules.length > 0) {
         prompt += "\n\nSubreddit rules:\n\n";
         for (const rule of rules) {
             prompt += `**${rule.shortName}**\n\n`;
-            prompt += `> ${rule.description.split("\n").map(line => `> ${line}`).join("\n")}\n\n`;
+            prompt += `${blockquoteText(rule.description)}\n\n`;
         }
     }
 
@@ -144,7 +144,7 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
         prompt += "\n\nNotes about the user left by moderators:\n\n";
         for (const note of modNotes.filter(note => note.userNote?.note)) {
             prompt += `* ${format(note.createdAt, "yyyy-MM-dd")}: ${note.userNote?.note}\n`;
-            prompt += `> ${note.userNote?.note?.split("\n").map(line => `> ${line}`).join("\n")}\n\n`;
+            prompt += `${blockquoteText(note.userNote?.note ?? "")}\n\n`;
         }
     }
 
