@@ -1,6 +1,6 @@
 import { redis, settings } from "@devvit/web/server";
 import { AppSetting } from ".";
-import { endOfMonth, format } from "date-fns";
+import { format } from "date-fns";
 
 const LOCAL_API_KEY = "localAPIKey";
 
@@ -46,8 +46,4 @@ export async function incrementAppealsThisMonth () {
         await redis.expire(getThisMonthsUsageKey(), 60 * 60 * 24 * 31);
     }
     console.log(`Appeals this month: ${newValue}`);
-}
-
-export async function setAppealsThisMonth (value: number) {
-    await redis.set(getThisMonthsUsageKey(), value.toString(), { expiration: endOfMonth(new Date()) });
 }
