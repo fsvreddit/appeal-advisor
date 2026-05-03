@@ -21,7 +21,7 @@ export async function addBulkUsersToCleanupLog (usernames: string[]) {
         return;
     }
 
-    // Add users to cleanup log with a random score within the next 28 days to help distribute cleanup workload
+    // Add users to cleanup log with a random score within the allowable cleanup period to help distribute cleanup workload
     const entries = usernames.map(username => ({
         member: username,
         score: addSeconds(new Date(), Math.floor(Math.random() * DAYS_BETWEEN_CLEANUP * 24 * 60 * 60)).getTime(),
