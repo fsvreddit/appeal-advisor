@@ -6,6 +6,7 @@ import _ from "lodash";
 import { getAPIKey } from "./apiKeys";
 import OpenAI from "openai";
 import { AppSetting } from "./appSettings";
+import { getBanDate } from "./banRecording";
 
 const basePrompt = `
 You are a helpful assistant for subreddit moderators that provides advice on whether a ban appeal is likely to be successful.
@@ -124,6 +125,11 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
     }
 
     let prompt = basePrompt.replace("{{appealMessage}}", blockquoteText(messageBody));
+
+    const banDate = await getBanDate(modmailMessage.participant);
+    if (banDate) {
+        prompt += `\n\nThe user was banned on ${format(banDate, "yyyy-MM-dd")}. This may be relevant context for evaluating the appeal.`;
+    }
 
     const rules = await reddit.getRules(context.subredditName);
     if (rules.length > 0) {

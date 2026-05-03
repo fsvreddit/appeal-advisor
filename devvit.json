@@ -32,6 +32,9 @@
             "data": {
                 "fromCron": true
             }
+        },
+        "populateInitialBanDates": {
+            "endpoint": "/internal/scheduler/populate-initial-ban-dates"
         }
     }
   },

@@ -11,8 +11,10 @@ export const handleModAction = async (c: Context) => {
 
     if (request.action === "banuser") {
         await recordBan(request.targetUser.name);
+        console.log(`Mod Action: Recorded ban for user ${request.targetUser.name}`);
     } else if (request.action === "unbanuser") {
         await removeRecordOfBan(request.targetUser.name);
+        console.log(`Mod Action: Removed ban record for user ${request.targetUser.name}`);
     }
 
     return c.json<TriggerResponse>({ message: "mod action handled" }, 200);
