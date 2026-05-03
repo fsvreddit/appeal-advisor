@@ -11,6 +11,10 @@ And runs it through AI to see if the user understands the reason for the ban, is
 
 You can either choose to summon this app using a username mention in modmail (u/appeal-advisor) or configure it to always respond to new threads from a banned user. I recommend using username mentions only because many users "appeals" consist of abuse directed at subreddit moderators, and you don't need AI to tell you that.
 
+The app does not perform unban actions itself, just advises moderators using private moderator notes.
+
+All subreddits get ten free ban appeals per calendar month funded by the developer. If you need more than this, you will need to provide your own OpenAI API key, which you can do through the subreddit's three-dot menu.
+
 Yes, this is going to be a hackathon entry for any Admins reviewing privately published apps!
 
 ## Source code
