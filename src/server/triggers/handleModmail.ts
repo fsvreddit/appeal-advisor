@@ -1,7 +1,7 @@
 import { OnModMailRequest, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { context, GetConversationResponse, reddit, redis } from "@devvit/web/server";
-import { handleAppeal, ModmailMessage } from "../core";
+import { context, GetConversationResponse, reddit, redis, settings } from "@devvit/web/server";
+import { AppSetting, handleAppeal, isUserBanned, ModmailMessage } from "../core";
 import { addMonths } from "date-fns";
 
 async function handleAppMention (message: ModmailMessage): Promise<TriggerResponse> {
@@ -10,18 +10,14 @@ async function handleAppMention (message: ModmailMessage): Promise<TriggerRespon
         return { message: "No message from participant found in conversation." };
     }
 
-    const bannedUsers = await reddit.getBannedUsers({
-        subredditName: context.subredditName,
-        username: message.participant,
-    }).all();
-
-    if (bannedUsers.length === 0) {
-        await reddit.modMail.reply({
-            conversationId: message.conversationId,
-            body: `u/${message.participant} is not currently banned from r/${context.subredditName} so appeal analysis is not necessary.`,
-        });
-        return { message: "participant is not banned" };
-    }
+    // if (!await isUserBanned(message.participant)) {
+    //     await reddit.modMail.reply({
+    //         conversationId: message.conversationId,
+    //         body: `u/${message.participant} is not currently banned from r/${context.subredditName} so appeal analysis is not necessary.`,
+    //         isInternal: true,
+    //     });
+    //     return { message: "participant is not banned" };
+    // }
 
     const moderators = await reddit.getModerators({
         subredditName: context.subredditName,
@@ -88,13 +84,12 @@ export const handleModmail = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "message author is not the participant" }, 200);
     }
 
-    const bannedUsers = await reddit.getBannedUsers({
-        subredditName: context.subredditName,
-        username: modmailMessage.participant,
-    }).all();
-
-    if (bannedUsers.length === 0) {
+    if (!await isUserBanned(modmailMessage.participant)) {
         return c.json<TriggerResponse>({ message: "participant is not banned" }, 200);
+    }
+
+    if (!await settings.get(AppSetting.HandleAppealsAutomatically)) {
+        return c.json<TriggerResponse>({ message: "automatic appeal handling is disabled" }, 200);
     }
 
     const firstMessageFromParticipant = messagesInConversation.find(message => message.author?.name === modmailMessage.participant);
