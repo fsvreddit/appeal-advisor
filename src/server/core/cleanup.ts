@@ -111,5 +111,5 @@ export async function cleanupDeletedAccounts (firstRun: boolean) {
         await redis.del(runRecentlyKey);
     }
 
-    console.log(`Cleanup: Processed ${processed} ${pluralize("user", processed)}. ${usersToCleanup.length} ${pluralize("user", usersToCleanup.length)} remain in cleanup log.`);
+    console.log(`Cleanup: Processed ${processed} ${pluralize("user", processed)}. ${usersToCleanup.length} ${pluralize("user", usersToCleanup.length)} remain due a check at this time.`);
 }
