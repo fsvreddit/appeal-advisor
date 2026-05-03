@@ -21,13 +21,11 @@ Your task is to provide advice to the moderators on whether they should approve 
 
 Consider whether the user is expressing genuine remorse, taking responsibility for their actions, and demonstrating an understanding of the rules they broke. Also consider whether the user has a history of similar behavior or if this was a one-time mistake.
 
-Also consider whether the user's behavior across Reddit generally is positive and in line with Reddit's content policy and subreddit rules. Put higher precedence on more recent activity.
+Also consider whether the user's behavior across Reddit generally is positive and in line with Reddit's content policy and subreddit rules. Put higher precedence on more recent activity, particularly history more recent than the ban date, if known.
 
 Provide your advice in the following format:
 * A recommendation (single line) of either "Approve", "Deny", and a confidence indicator (e.g. words such as "high confidence", "medium confidence", "low confidence").
 * Reasoning (3-4 paragraphs total) that explains the recommendation in more detail, referencing specific information from the appeal message, subreddit rules, moderator notes, and user history as necessary.
-
-{{appealMessage}}
 `;
 
 interface PostInfo {
@@ -119,12 +117,23 @@ async function getUserHistoryForAppeal (username: string) {
 export async function handleAppeal (messageBody: string, modmailMessage: ModmailMessage): Promise<TriggerResponse> {
     console.log(`Handling appeal for conversation ${modmailMessage.conversationId} from participant ${modmailMessage.participant}`);
 
+    const apiKeyInformation = await getAPIKey();
+    if (!apiKeyInformation.apiKey) {
+        await reddit.modMail.reply({
+            conversationId: modmailMessage.conversationId,
+            body: `Sorry, but I am currently unable to analyze this appeal because there is no API key available and you are out of free appeals for this month.`,
+            isInternal: true,
+        });
+        console.error("No API key available to handle appeal");
+        return { message: "no API key available" };
+    }
+
     const userHistory = await getUserHistoryForAppeal(modmailMessage.participant);
     if (!userHistory) {
         console.log(`User ${modmailMessage.participant} may be shadowbanned or suspended.`);
     }
 
-    let prompt = basePrompt.replace("{{appealMessage}}", blockquoteText(messageBody));
+    let prompt = `${basePrompt}\n\n## User's appeal message:\n\n${blockquoteText(messageBody)}`;
 
     const banDate = await getBanDate(modmailMessage.participant);
     if (banDate) {
@@ -133,7 +142,7 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
 
     const rules = await reddit.getRules(context.subredditName);
     if (rules.length > 0) {
-        prompt += "\n\nSubreddit rules:\n\n";
+        prompt += "\n\n## Subreddit rules:\n\n";
         for (const rule of rules) {
             prompt += `**${rule.shortName}**\n\n`;
             prompt += `${blockquoteText(rule.description)}\n\n`;
@@ -147,21 +156,15 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
     }).all();
 
     if (modNotes.length > 0) {
-        prompt += "\n\nNotes about the user left by moderators:\n\n";
+        prompt += "\n\n## Notes about the user left by moderators:\n\n";
         for (const note of modNotes.filter(note => note.userNote?.note)) {
             prompt += `* ${format(note.createdAt, "yyyy-MM-dd")}: ${note.userNote?.note}\n`;
             prompt += `${blockquoteText(note.userNote?.note ?? "")}\n\n`;
         }
     }
 
-    prompt += "\n\nJSON containing information about the user and their history:\n\n";
+    prompt += "\n\n## JSON containing information about the user and their history:\n\n";
     prompt += JSON.stringify(userHistory, null, 2);
-
-    const apiKeyInformation = await getAPIKey();
-    if (!apiKeyInformation.apiKey) {
-        console.error("No API key available to handle appeal");
-        return { message: "no API key available" };
-    }
 
     const openAI = new OpenAI({ apiKey: apiKeyInformation.apiKey });
     const appSettings = await settings.getAll();
