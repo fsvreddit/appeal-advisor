@@ -35,6 +35,9 @@
         },
         "populateInitialBanDates": {
             "endpoint": "/internal/scheduler/populate-initial-ban-dates"
+        },
+        "callOpenAI": {
+            "endpoint": "/internal/scheduler/call-openai"
         }
     }
   },

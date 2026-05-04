@@ -4,7 +4,7 @@ import { getRequestListener } from "@hono/node-server";
 import { handleAppInstall, handleAppUpgrade, handleModAction, handleModmail } from "./triggers";
 import { setAPIKeyMenu } from "./menus";
 import { handleSetAPIKeyForm } from "./forms";
-import { handleCleanupDeletedAccounts, handlePopulateInitialBanDates } from "./scheduler";
+import { handleCallOpenAI, handleCleanupDeletedAccounts, handlePopulateInitialBanDates } from "./scheduler";
 
 const application = new Hono();
 
@@ -17,6 +17,7 @@ application.post("/internal/triggers/on-modmail", handleModmail);
 // Scheduler
 application.post("/internal/scheduler/cleanup-deleted-accounts", handleCleanupDeletedAccounts);
 application.post("/internal/scheduler/populate-initial-ban-dates", handlePopulateInitialBanDates);
+application.post("/internal/scheduler/call-openai", handleCallOpenAI);
 
 // Menus
 application.post("/internal/menu/set-openai-key", setAPIKeyMenu);

@@ -1,4 +1,4 @@
-import { context, Post, reddit, settings } from "@devvit/web/server";
+import { context, Post, reddit, scheduler, settings } from "@devvit/web/server";
 import { isT3, TriggerResponse } from "@devvit/web/shared";
 import { ModmailMessage } from "./types";
 import { format } from "date-fns";
@@ -7,6 +7,7 @@ import { getAPIKey } from "./apiKeys";
 import OpenAI from "openai";
 import { AppSetting } from "./appSettings";
 import { getBanDate } from "./banRecording";
+import { SchedulerJob } from "../scheduler";
 
 const basePrompt = `
 You are a helpful assistant for subreddit moderators that provides advice on whether a ban appeal is likely to be successful.
@@ -170,6 +171,32 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
     prompt += "\n\n## JSON containing information about the user and their history:\n\n";
     prompt += JSON.stringify(userHistory, null, 2);
 
+    // Actually do OpenAI call in a scheduled job to avoid hitting execution time limits for the trigger
+    await scheduler.runJob({
+        name: SchedulerJob.CallOpenAI,
+        data: {
+            prompt,
+            conversationId: modmailMessage.conversationId,
+        },
+        runAt: new Date(),
+    });
+
+    return { message: "scheduled OpenAI call" };
+}
+
+export async function callOpenAIAndRespond (prompt: string, conversationId: string) {
+    const apiKeyInformation = await getAPIKey();
+
+    if (!apiKeyInformation.apiKey) {
+        await reddit.modMail.reply({
+            conversationId,
+            body: `Sorry, but I am currently unable to analyze this appeal because there is no API key available and you are out of free appeals for this month.`,
+            isInternal: true,
+        });
+        console.error("No API key available to handle appeal");
+        return;
+    }
+
     const openAI = new OpenAI({ apiKey: apiKeyInformation.apiKey });
     const appSettings = await settings.getAll();
     const response = await openAI.responses.create({
@@ -180,10 +207,8 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
     console.log(`Tokens used: ${response.usage?.total_tokens}`);
 
     await reddit.modMail.reply({
-        conversationId: modmailMessage.conversationId,
+        conversationId,
         body: `${response.output_text}\n\n*This response is AI generated, and may not be 100% accurate. Use your judgment as a moderator to make the final decision on the appeal.*`,
         isInternal: true,
     });
-
-    return { message: "appeal handling not yet implemented" };
 }
