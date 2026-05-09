@@ -1,7 +1,7 @@
 import { OnModMailRequest, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { context, GetConversationResponse, reddit, redis, settings } from "@devvit/web/server";
-import { AppSetting, handleAppeal, isUserBanned, ModmailMessage } from "../core";
+import { AppSetting, handleAppeal, hasTriggerBeenHandled, isUserBanned, ModmailMessage } from "../core";
 import { addMonths } from "date-fns";
 
 async function handleAppMention (message: ModmailMessage): Promise<TriggerResponse> {
@@ -40,6 +40,10 @@ export const handleModmail = async (c: Context) => {
 
     if (modmailRequest.conversationType !== "sr_user") {
         return c.json<TriggerResponse>({ message: "conversation is not a user conversation" }, 200);
+    }
+
+    if (await hasTriggerBeenHandled(`modmail:${modmailRequest.messageId}`)) {
+        return c.json<TriggerResponse>({ message: "modmail message has already been handled" }, 200);
     }
 
     let conversation: GetConversationResponse;
