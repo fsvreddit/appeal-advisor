@@ -45,9 +45,16 @@
     "subreddit": {
         "handleAppealsAutomatically": {
             "label": "Handle appeals automatically",
-            "helpText": "If turned off, summon this app using u/appeal-advisor",
+            "helpText": "I recommend leaving this turned off because many/most appeals can be handled without assistance. If turned off, summon this app using u/appeal-advisor.",
             "type": "boolean",
             "defaultValue": false
+        },
+        "subredditTerminology": {
+            "label": "Subreddit Terminology",
+            "helpText": "Any subreddit-specific terminology that might commonly appear in ban reasons or mod notes to help understand context. One per line in the format 'term: meaning' e.g. 'necrospam: spamming links in old threads to evade detection'",
+            "type": "paragraph",
+            "defaultValue": "",
+            "validationEndpoint": "/internal/validators/subreddit-terminology"
         }
     },
     "global": {

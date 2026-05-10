@@ -16,6 +16,7 @@ You will be provided with:
 * The content of the user's appeal message, which may include an explanation of why they were banned, an apology, and/or a promise to follow the rules in the future.
 * The rules of the subreddit they were banned from (if any exist).
 * Any notes made by moderators about the user (if any exist).
+* Any relevant subreddit-specific terminology that might be used in the appeal message, ban reason, or mod notes, along with explanations of that terminology (if any have been provided).
 * The user's recent history across Reddit (if any history exists).
 
 Your task is to provide advice to the moderators on whether they should approve or deny the appeal, or if there is not enough information to make a judgment.
@@ -24,7 +25,7 @@ Consider whether the user is expressing genuine remorse, taking responsibility f
 
 Consider whether the user's behavior across Reddit generally is positive and in line with Reddit's content policy and subreddit rules.
 
-Put higher precedence on more recent activity, particularly history more recent than the ban date, if known.
+Put significantly higher precedence on more recent activity, particularly history more recent than the ban date, if known. Positive post-ban engagement is a strong signal in favor of approving the appeal, even if the user had a history of rule-breaking before that.
 
 It's important to acknowledge changes in behavior, so if the user had a history of rule-breaking but has shown a significant improvement in behavior recently, that should be taken into account.
 
@@ -119,6 +120,23 @@ async function getUserHistoryForAppeal (username: string) {
     }
 }
 
+async function getSubredditTerminology (): Promise<Record<string, string>> {
+    const subTerminologyValue = await settings.get<string>(AppSetting.SubredditTerminology);
+    if (!subTerminologyValue) {
+        return {};
+    }
+
+    const lines = subTerminologyValue.split("\n");
+    const terminology: Record<string, string> = {};
+    for (const line of lines) {
+        const [term, meaning] = line.split(":").map(part => part.trim());
+        if (term && meaning) {
+            terminology[term] = meaning;
+        }
+    }
+    return terminology;
+}
+
 export async function handleAppeal (messageBody: string, modmailMessage: ModmailMessage): Promise<TriggerResponse> {
     console.log(`Handling appeal for conversation ${modmailMessage.conversationId} from participant ${modmailMessage.participant}`);
 
@@ -165,6 +183,14 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
         for (const note of modNotes.filter(note => note.userNote?.note)) {
             prompt += `* ${format(note.createdAt, "yyyy-MM-dd")}: ${note.userNote?.note}\n`;
             prompt += `${blockquoteText(note.userNote?.note ?? "")}\n\n`;
+        }
+    }
+
+    const subredditTerminology = await getSubredditTerminology();
+    if (Object.keys(subredditTerminology).length > 0) {
+        prompt += "\n\n## Subreddit-specific terminology:\n\n";
+        for (const [term, meaning] of Object.entries(subredditTerminology)) {
+            prompt += `* **${term}**: ${meaning}\n`;
         }
     }
 
