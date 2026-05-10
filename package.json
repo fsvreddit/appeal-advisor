@@ -20,6 +20,7 @@
   "dependencies": {
     "@devvit/start": "0.12.22",
     "@devvit/web": "0.12.22",
+    "@fsvreddit/fsv-devvit-web-helpers": "github:fsvreddit/fsv-devvit-web-helpers",
     "@hono/node-server": "^2.0.0",
     "date-fns": "^4.1.0",
     "hono": "^4.11.7",

@@ -1,8 +1,9 @@
 import { OnModMailRequest, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { context, GetConversationResponse, reddit, redis, settings } from "@devvit/web/server";
-import { AppSetting, handleAppeal, hasTriggerBeenHandled, isUserBanned, ModmailMessage } from "../core";
+import { AppSetting, handleAppeal, isUserBanned, ModmailMessage } from "../core";
 import { addMonths } from "date-fns";
+import { hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 
 async function handleAppMention (message: ModmailMessage): Promise<TriggerResponse> {
     const userMessage = message.messagesInConversation.find(msg => msg.author?.name === message.participant);
