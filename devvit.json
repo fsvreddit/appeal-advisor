@@ -49,6 +49,23 @@
             "type": "boolean",
             "defaultValue": false
         },
+        "detailLevel": {
+            "label": "Detail level for appeal advice",
+            "helpText": "Controls the detail level of the output. Detailed output returns four paragraphs, concise returns one",
+            "type": "select",
+            "options": [
+                {
+                    "label": "Detailed",
+                    "value": "detailed"
+                },
+                {
+                    "label": "Concise",
+                    "value": "concise"
+                }
+            ],
+            "defaultValue": "detailed",
+            "validationEndpoint": "/internal/validators/select-field-has-option-chosen"
+        },
         "subredditTerminology": {
             "label": "Subreddit Terminology",
             "helpText": "Any subreddit-specific terminology that might commonly appear in ban reasons or mod notes to help understand context. One per line in the format 'term: meaning' e.g. 'necrospam: spamming links in old threads to evade detection'",

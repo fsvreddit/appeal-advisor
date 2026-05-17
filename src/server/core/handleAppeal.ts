@@ -1,11 +1,11 @@
-import { context, Post, reddit, scheduler, settings } from "@devvit/web/server";
+import { context, Post, reddit, scheduler, settings, SettingsValues } from "@devvit/web/server";
 import { isT3, TriggerResponse } from "@devvit/web/shared";
 import { ModmailMessage } from "./types";
 import { format } from "date-fns";
 import _ from "lodash";
 import { getAPIKey } from "./apiKeys";
 import OpenAI from "openai";
-import { AppSetting } from "./appSettings";
+import { AppSetting, DetailLevel } from "./appSettings";
 import { getBanDate } from "./banRecording";
 import { SchedulerJob } from "../scheduler";
 
@@ -31,7 +31,7 @@ It's important to acknowledge changes in behavior, so if the user had a history 
 
 Provide your advice in the following format:
 * A recommendation (single line) of either "Approve", "Deny", and a confidence indicator (e.g. words such as "high confidence", "medium confidence", "low confidence").
-* Reasoning (3-4 paragraphs total) that explains the recommendation in more detail, referencing specific information from the appeal message, subreddit rules, moderator notes, and user history as necessary.
+* Reasoning ({{paraCount}} total) that explains the recommendation in more detail, referencing specific information from the appeal message, subreddit rules, moderator notes, and user history as necessary.
 `;
 
 interface PostInfo {
@@ -120,8 +120,8 @@ async function getUserHistoryForAppeal (username: string) {
     }
 }
 
-async function getSubredditTerminology (): Promise<Record<string, string>> {
-    const subTerminologyValue = await settings.get<string>(AppSetting.SubredditTerminology);
+function getSubredditTerminology (appSettings: SettingsValues): Record<string, string> {
+    const subTerminologyValue = appSettings[AppSetting.SubredditTerminology] as string | undefined;
     if (!subTerminologyValue) {
         return {};
     }
@@ -156,7 +156,21 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
         console.log(`User ${modmailMessage.participant} may be shadowbanned or suspended.`);
     }
 
-    let prompt = `${basePrompt}\n\n## User's appeal message:\n\n${blockquoteText(messageBody)}`;
+    const appSettings = await settings.getAll();
+    const [detailLevel] = appSettings[AppSetting.DetailLevel] as DetailLevel[] | undefined ?? DetailLevel.Detailed;
+
+    let paraCount: string;
+    switch (detailLevel) {
+        case DetailLevel.Concise:
+            paraCount = "one paragraph";
+            break;
+        case DetailLevel.Detailed:
+        default:
+            paraCount = "four paragraphs";
+            break;
+    }
+
+    let prompt = `${basePrompt.replaceAll("{{paraCount}}", paraCount)}\n\n## User's appeal message:\n\n${blockquoteText(messageBody)}`;
 
     const banDate = await getBanDate(modmailMessage.participant);
     if (banDate) {
@@ -186,7 +200,7 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
         }
     }
 
-    const subredditTerminology = await getSubredditTerminology();
+    const subredditTerminology = getSubredditTerminology(appSettings);
     if (Object.keys(subredditTerminology).length > 0) {
         prompt += "\n\n## Subreddit-specific terminology:\n\n";
         for (const [term, meaning] of Object.entries(subredditTerminology)) {

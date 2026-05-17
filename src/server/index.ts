@@ -5,7 +5,7 @@ import { handleAppInstall, handleAppUpgrade, handleModAction, handleModmail } fr
 import { setAPIKeyMenu } from "./menus";
 import { handleSetAPIKeyForm } from "./forms";
 import { handleCallOpenAI, handleCleanupDeletedAccounts, handlePopulateInitialBanDates } from "./scheduler";
-import { validateSubredditTerminology } from "./validators";
+import { handleSelectFieldHasOptionChosen, validateSubredditTerminology } from "./validators";
 
 const application = new Hono();
 
@@ -27,6 +27,7 @@ application.post("/internal/menu/set-openai-key", setAPIKeyMenu);
 application.post("/internal/form/set-openai-key", handleSetAPIKeyForm);
 
 // Settings validators
+application.post("/internal/validators/select-field-has-option-chosen", handleSelectFieldHasOptionChosen);
 application.post("/internal/validators/subreddit-terminology", validateSubredditTerminology);
 
 const server = createServer(getRequestListener(application.fetch));
