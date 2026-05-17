@@ -3,7 +3,7 @@ import { isT3, TriggerResponse } from "@devvit/web/shared";
 import { ModmailMessage } from "./types";
 import { format } from "date-fns";
 import _ from "lodash";
-import { getAPIKey } from "./apiKeys";
+import { getAPIKey, incrementAppealsThisMonth } from "./apiKeys";
 import OpenAI from "openai";
 import { AppSetting, DetailLevel } from "./appSettings";
 import { getBanDate } from "./banRecording";
@@ -251,4 +251,8 @@ export async function callOpenAIAndRespond (prompt: string, conversationId: stri
         body: `${response.output_text}\n\n*This response is AI generated, and may not be 100% accurate. Use your judgment as a moderator to make the final decision on the appeal.*`,
         isInternal: true,
     });
+
+    if (apiKeyInformation.type === "global") {
+        await incrementAppealsThisMonth();
+    }
 }

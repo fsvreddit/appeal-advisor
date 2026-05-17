@@ -5,7 +5,14 @@ import { format } from "date-fns";
 const LOCAL_API_KEY = "localAPIKey";
 
 export async function setLocalAPIKey (apiKey: string) {
+    if (apiKey.length === 0) {
+        await redis.del(LOCAL_API_KEY);
+        console.log("Local API key removed.");
+        return;
+    }
+
     await redis.set(LOCAL_API_KEY, apiKey);
+    console.log("Local API key set.");
 }
 
 function getThisMonthsUsageKey (): string {
