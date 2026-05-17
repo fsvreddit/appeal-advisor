@@ -1,37 +1,63 @@
 import { context, Post, reddit, scheduler, settings, SettingsValues } from "@devvit/web/server";
 import { isT3, TriggerResponse } from "@devvit/web/shared";
-import { ModmailMessage } from "./types";
 import { format } from "date-fns";
 import _ from "lodash";
-import { getAPIKey, incrementAppealsThisMonth } from "./apiKeys";
+import { AppSetting, getAPIKey, getBanDate, incrementAppealsThisMonth, ModmailMessage } from ".";
 import OpenAI from "openai";
-import { AppSetting, DetailLevel } from "./appSettings";
-import { getBanDate } from "./banRecording";
 import { SchedulerJob } from "../scheduler";
 
 const basePrompt = `
-You are a helpful assistant for subreddit moderators that provides advice on whether a ban appeal is likely to be successful.
+You are a helpful assistant for subreddit moderators that provides advice on whether a ban appeal should be approved or denied.
 
 You will be provided with:
-* The content of the user's appeal message, which may include an explanation of why they were banned, an apology, and/or a promise to follow the rules in the future.
-* The rules of the subreddit they were banned from (if any exist).
-* Any notes made by moderators about the user (if any exist).
-* Any relevant subreddit-specific terminology that might be used in the appeal message, ban reason, or mod notes, along with explanations of that terminology (if any have been provided).
-* The user's recent history across Reddit (if any history exists).
 
-Your task is to provide advice to the moderators on whether they should approve or deny the appeal, or if there is not enough information to make a judgment.
+* The content of the user's appeal message
+* The rules of the subreddit (if available)
+* Moderator notes about the user (if available)
+* Explanations of subreddit-specific terminology (if available)
+* The user's recent Reddit history (if available)
 
-Consider whether the user is expressing genuine remorse, taking responsibility for their actions, and demonstrating an understanding of the rules they broke.
+Your task is to advise moderators on whether the appeal should be approved, denied, or if there is not enough information to make a reliable judgment.
 
-Consider whether the user's behavior across Reddit generally is positive and in line with Reddit's content policy and subreddit rules.
+When evaluating the appeal, consider:
 
-Put significantly higher precedence on more recent activity, particularly history more recent than the ban date, if known. Positive post-ban engagement is a strong signal in favor of approving the appeal, even if the user had a history of rule-breaking before that.
+* Whether the user takes responsibility for their actions
+* Whether they demonstrate understanding of the violated rules
+* Whether their tone is respectful and constructive
+* Whether their recent behavior indicates improvement
+* Whether their broader Reddit activity aligns with Reddit policies and subreddit rules
 
-It's important to acknowledge changes in behavior, so if the user had a history of rule-breaking but has shown a significant improvement in behavior recently, that should be taken into account.
+Give substantial weight to recent behavior, especially activity after the ban date if known. Demonstrated positive engagement after a ban is a strong signal in favor of approval, even if earlier history included rule violations.
+
+Also consider the severity, frequency, and recency of past violations. Repeated harmful behavior, harassment, ban evasion, or continued rule-breaking after the ban are strong signals against approval.
+
+Focus primarily on observable behavior and evidence rather than emotional language alone. Do not speculate about motivations, intent, or personal characteristics beyond the provided information.
+
+Missing information should not be treated as evidence either for or against the appeal.
+
+If the available evidence is mixed or contradictory, acknowledge the uncertainty explicitly in the recommendation and reasoning.
+
+Consider the overall trajectory of the user's behavior rather than treating isolated minor violations as determinative.
+
+Maintain a neutral, professional tone.
 
 Provide your advice in the following format:
-* A recommendation (single line) of either "Approve", "Deny", and a confidence indicator (e.g. words such as "high confidence", "medium confidence", "low confidence").
-* Reasoning ({{paraCount}} total) that explains the recommendation in more detail, referencing specific information from the appeal message, subreddit rules, moderator notes, and user history as necessary.
+
+* A recommendation (single line) of either "Approve", "Deny" or "Not enough information", and a confidence indicator (e.g. words such as "high confidence", "medium confidence", "low confidence").
+* Key factors: three to six bullet points with short sentences summarizing the most important factors that led to your recommendation.
+* Reasoning: Provide concise reasoning in 2–4 paragraphs that explains the recommendation in more detail, referencing specific information from the appeal message, subreddit rules, moderator notes, and user history as necessary.
+
+Confidence should reflect the quality and consistency of the evidence:
+
+* High confidence: strong, consistent evidence supporting the recommendation
+* Medium confidence: mixed or incomplete evidence
+* Low confidence: limited, ambiguous, or conflicting evidence
+
+For the key factors bullet points:
+
+* Be concise and factual rather than speculative
+* Focus on the strongest signals either for or against approval
+
 `;
 
 interface PostInfo {
@@ -157,20 +183,8 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
     }
 
     const appSettings = await settings.getAll();
-    const [detailLevel] = appSettings[AppSetting.DetailLevel] as DetailLevel[] | undefined ?? DetailLevel.Detailed;
 
-    let paraCount: string;
-    switch (detailLevel) {
-        case DetailLevel.Concise:
-            paraCount = "one paragraph";
-            break;
-        case DetailLevel.Detailed:
-        default:
-            paraCount = "four paragraphs";
-            break;
-    }
-
-    let prompt = `${basePrompt.replaceAll("{{paraCount}}", paraCount)}\n\n## User's appeal message:\n\n${blockquoteText(messageBody)}`;
+    let prompt = `${basePrompt}\n\n## User's appeal message:\n\n${blockquoteText(messageBody)}`;
 
     const banDate = await getBanDate(modmailMessage.participant);
     if (banDate) {
@@ -242,6 +256,7 @@ export async function callOpenAIAndRespond (prompt: string, conversationId: stri
     const response = await openAI.responses.create({
         model: appSettings[AppSetting.OpenAIModel] as string || "gpt-5.4-mini",
         input: prompt,
+        temperature: 0.2,
     });
 
     console.log(`Tokens used: ${response.usage?.total_tokens}`);
