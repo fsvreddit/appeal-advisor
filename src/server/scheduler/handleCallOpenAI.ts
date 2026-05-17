@@ -1,17 +1,14 @@
 import { Context } from "hono";
-import { ScheduledCronJob } from "@devvit/web/server";
+import { TaskRequest, TaskResponse } from "@devvit/web/server";
 import { callOpenAIAndRespond } from "../core";
 
 export const handleCallOpenAI = async (c: Context) => {
-    const request = await c.req.json<ScheduledCronJob>();
+    const request = await c.req.json<TaskRequest<{
+        prompt: string;
+        conversationId: string;
+    }>>();
 
-    const prompt = request.data?.prompt as string | undefined;
-    const conversationId = request.data?.conversationId as string | undefined;
+    await callOpenAIAndRespond(request.data.prompt, request.data.conversationId);
 
-    if (!prompt || !conversationId) {
-        console.error("Missing prompt or conversationId in callOpenAI job data", { prompt, conversationId });
-        return c.json({ message: "missing prompt or conversationId" }, 400);
-    }
-
-    await callOpenAIAndRespond(prompt, conversationId);
+    return c.json<TaskResponse>({ message: "OpenAI called and response sent" }, 200);
 };
