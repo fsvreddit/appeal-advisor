@@ -106,6 +106,9 @@ export async function cleanupDeletedAccounts (firstRun: boolean) {
         await scheduler.runJob({
             name: SchedulerJob.CleanupDeletedAccounts,
             runAt: new Date(),
+            data: {
+                fromCron: false,
+            },
         });
     } else {
         await redis.del(runRecentlyKey);

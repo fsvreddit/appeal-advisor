@@ -1,12 +1,11 @@
 import { Context } from "hono";
 import { cleanupDeletedAccounts } from "../core";
-import { ScheduledCronJob } from "@devvit/web/server";
+import { TaskRequest, TaskResponse } from "@devvit/web/server";
 
 export const handleCleanupDeletedAccounts = async (c: Context) => {
-    const request = await c.req.json<ScheduledCronJob>();
+    const request = await c.req.json<TaskRequest<{ fromCron: boolean }>>();
 
-    const fromCron = request.data?.fromCron as boolean | undefined ?? false;
-    await cleanupDeletedAccounts(fromCron);
+    await cleanupDeletedAccounts(request.data.fromCron);
 
-    return c.json({ message: "cleanup of deleted accounts complete" }, 200);
+    return c.json<TaskResponse>({ message: "cleanup of deleted accounts complete" }, 200);
 };
