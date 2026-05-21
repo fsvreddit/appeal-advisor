@@ -76,6 +76,9 @@
     "dev": "vite build --watch",
     "build": "vite build"
   },
+  "marketingAssets": {
+    "icon": "assets/icon.png"
+  },
   "permissions": {
     "reddit": true,
     "http": {
