@@ -1,8 +1,10 @@
 import { OnModMailRequest, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { context, GetConversationResponse, reddit, settings } from "@devvit/web/server";
-import { AppSetting, handleAppeal, isUserBanned, ModmailMessage } from "../core";
+import { context, GetConversationResponse, reddit, scheduler } from "@devvit/web/server";
+import { handleAppeal, isUserBanned, ModmailMessage, SendModmailAsyncData } from "../core";
 import { hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
+import { SchedulerJob } from "../scheduler";
+import { addSeconds } from "date-fns";
 
 async function handleAppMention (message: ModmailMessage): Promise<TriggerResponse> {
     const userMessage = message.messagesInConversation.find(msg => msg.author?.name === message.participant);
@@ -92,10 +94,6 @@ export const handleModmail = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "participant is not banned" }, 200);
     }
 
-    if (!await settings.get(AppSetting.HandleAppealsAutomatically)) {
-        return c.json<TriggerResponse>({ message: "automatic appeal handling is disabled" }, 200);
-    }
-
     const firstMessageFromParticipant = messagesInConversation.find(message => message.author?.name === modmailMessage.participant);
     if (firstMessageFromParticipant?.id !== currentMessage.id) {
         return c.json<TriggerResponse>({ message: "ignoring message because it's not the first message from the participant" }, 200);
@@ -104,6 +102,22 @@ export const handleModmail = async (c: Context) => {
     if (!firstMessageFromParticipant?.bodyMarkdown) {
         return c.json<TriggerResponse>({ message: "first message from participant has no body" }, 200);
     }
+
+    const data: SendModmailAsyncData = {
+        conversationId: modmailMessage.conversationId,
+        message: [
+            `u/${modmailMessage.participant} is currently **banned** on r/${context.subredditName}.`,
+            `If you would like Appeal Advisor to analyze this user's appeal, reply to this message with a private note that mentions me in the form \`u/${context.appSlug}\`.`,
+            "I'll then respond with an analysis of the user's appeal taking into account their recent history, subreddit rules and mod notes.",
+        ].join("\n\n"),
+        isAuthorHidden: true,
+    };
+
+    await scheduler.runJob({
+        name: SchedulerJob.SendModmailAsync,
+        runAt: addSeconds(new Date(), 10),
+        data,
+    });
 
     return c.json<TriggerResponse>(await handleAppeal(firstMessageFromParticipant.bodyMarkdown, modmailMessage), 200);
 };

@@ -1,6 +1,5 @@
 export enum AppSetting {
     // Sub-scoped settings
-    HandleAppealsAutomatically = "handleAppealsAutomatically",
     SubredditTerminology = "subredditTerminology",
 
     // App-scoped settings

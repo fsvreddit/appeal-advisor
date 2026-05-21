@@ -8,3 +8,21 @@ export interface ModmailMessage {
     messageBody: string;
     messagesInConversation: MessageData[];
 }
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type CallOpenAIData = {
+    prompt: string;
+    conversationId: string;
+};
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type CleanupDeletedAccountsData = {
+    fromCron: boolean;
+};
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type SendModmailAsyncData = {
+    conversationId: string;
+    message: string;
+    isAuthorHidden: boolean;
+};

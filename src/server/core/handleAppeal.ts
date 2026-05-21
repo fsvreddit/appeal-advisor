@@ -2,7 +2,7 @@ import { context, Post, reddit, scheduler, settings, SettingsValues } from "@dev
 import { isT3, TriggerResponse } from "@devvit/web/shared";
 import { format } from "date-fns";
 import _ from "lodash";
-import { AppSetting, getAPIKey, getBanDate, incrementAppealsThisMonth, ModmailMessage } from ".";
+import { AppSetting, CallOpenAIData, getAPIKey, getBanDate, incrementAppealsThisMonth, ModmailMessage } from ".";
 import OpenAI from "openai";
 import { SchedulerJob } from "../scheduler";
 
@@ -225,13 +225,15 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
     prompt += "\n\n## JSON containing information about the user and their history:\n\n";
     prompt += JSON.stringify(userHistory, null, 2);
 
+    const data: CallOpenAIData = {
+        prompt,
+        conversationId: modmailMessage.conversationId,
+    };
+
     // Actually do OpenAI call in a scheduled job to avoid hitting execution time limits for the trigger
     await scheduler.runJob({
         name: SchedulerJob.CallOpenAI,
-        data: {
-            prompt,
-            conversationId: modmailMessage.conversationId,
-        },
+        data,
         runAt: new Date(),
     });
 

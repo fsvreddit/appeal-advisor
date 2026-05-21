@@ -1,9 +1,9 @@
 import { Context } from "hono";
-import { cleanupDeletedAccounts } from "../core";
+import { cleanupDeletedAccounts, CleanupDeletedAccountsData } from "../core";
 import { TaskRequest, TaskResponse } from "@devvit/web/server";
 
 export const handleCleanupDeletedAccounts = async (c: Context) => {
-    const request = await c.req.json<TaskRequest<{ fromCron: boolean }>>();
+    const request = await c.req.json<TaskRequest<CleanupDeletedAccountsData>>();
 
     await cleanupDeletedAccounts(request.data.fromCron);
 

@@ -1,12 +1,9 @@
 import { Context } from "hono";
 import { TaskRequest, TaskResponse } from "@devvit/web/server";
-import { callOpenAIAndRespond } from "../core";
+import { callOpenAIAndRespond, CallOpenAIData } from "../core";
 
 export const handleCallOpenAI = async (c: Context) => {
-    const request = await c.req.json<TaskRequest<{
-        prompt: string;
-        conversationId: string;
-    }>>();
+    const request = await c.req.json<TaskRequest<CallOpenAIData>>();
 
     await callOpenAIAndRespond(request.data.prompt, request.data.conversationId);
 

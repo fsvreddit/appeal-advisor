@@ -1,8 +1,7 @@
 import { context, reddit, redis, scheduler, User } from "@devvit/web/server";
 import { addDays, addMinutes, addSeconds } from "date-fns";
 import { SchedulerJob } from "../scheduler";
-import { getBanDate, removeRecordOfBan } from "./banRecording";
-import { isUserBanned } from "./helpers";
+import { CleanupDeletedAccountsData, getBanDate, isUserBanned, removeRecordOfBan } from ".";
 import pluralize from "pluralize";
 
 const CLEANUP_LOG_KEY = "cleanupLog";
@@ -103,12 +102,14 @@ export async function cleanupDeletedAccounts (firstRun: boolean) {
     }
 
     if (usersToCleanup.length > 0) {
+        const data: CleanupDeletedAccountsData = {
+            fromCron: false,
+        };
+
         await scheduler.runJob({
             name: SchedulerJob.CleanupDeletedAccounts,
             runAt: new Date(),
-            data: {
-                fromCron: false,
-            },
+            data,
         });
     } else {
         await redis.del(runRecentlyKey);
