@@ -39,6 +39,12 @@ If the available evidence is mixed or contradictory, acknowledge the uncertainty
 
 Consider the overall trajectory of the user's behavior rather than treating isolated minor violations as determinative.
 
+Positive engagement after a ban should be weighed significantly in favor of approval, even if the user had prior rule violations. The goal is not only to identify ongoing problematic behavior, but also to recognize credible evidence of behavioral improvement and willingness to follow subreddit rules going forward.
+
+Avoid treating isolated minor incidents or emotionally charged comments as determinative when the broader pattern of behavior is constructive.
+
+When both positive and negative signals are present, weigh the overall behavioral trend and likelihood of future rule compliance rather than focusing disproportionately on past violations alone.
+
 Maintain a neutral, professional tone.
 
 Provide your advice in the following format:
