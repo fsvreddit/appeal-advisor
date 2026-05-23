@@ -69,6 +69,18 @@
         "label": "OpenAI Model to use for appeals",
         "type": "string",
         "defaultValue": "gpt-5.4-mini"
+      },
+      "promptSubreddit": {
+        "label": "Prompt Subreddit",
+        "helpText": "Subreddit to pull base prompt from the wiki of",
+        "type": "string",
+        "defaultValue": "fsvapps"
+      },
+      "promptWikiPage": {
+        "label": "Prompt Wiki Page",
+        "helpText": "Wiki page containing the base prompt",
+        "type": "string",
+        "defaultValue": "prompts/appeal-advisor"
       }
     }
   },

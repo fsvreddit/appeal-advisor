@@ -6,74 +6,18 @@ import { AppSetting, CallOpenAIData, getAPIKey, getBanDate, incrementAppealsThis
 import OpenAI from "openai";
 import { SchedulerJob } from "../scheduler";
 
-const basePrompt = `
-You are a helpful assistant for subreddit moderators that provides advice on whether a ban appeal should be approved or denied.
+async function getBasePrompt (appSettings: SettingsValues): Promise<string> {
+    const promptSubreddit = appSettings[AppSetting.PromptSubreddit] as string | undefined ?? "fsvapps";
+    const promptWikiPage = appSettings[AppSetting.PromptWikiPage] as string | undefined ?? "prompts/appeal-advisor";
 
-You will be provided with:
-
-* The content of the user's appeal message
-* The rules of the subreddit (if available)
-* Moderator notes about the user (if available)
-* Explanations of subreddit-specific terminology (if available)
-* The user's recent Reddit history (if available)
-
-Your task is to advise moderators on whether the appeal should be approved, denied, or if there is not enough information to make a reliable judgment.
-
-When evaluating the appeal, consider:
-
-* Whether the user takes responsibility for their actions
-* Whether they demonstrate understanding of the violated rules
-* Whether their tone is respectful and constructive
-* Whether their recent behavior indicates improvement
-* Whether their broader Reddit activity aligns with Reddit policies and subreddit rules
-
-Give substantial weight to recent behavior, especially activity after the ban date if known. Demonstrated positive engagement after a ban is a strong signal in favor of approval, even if earlier history included rule violations.
-
-Also consider the severity, frequency, and recency of past violations. Repeated harmful behavior, harassment, ban evasion, or continued rule-breaking after the ban are strong signals against approval.
-
-Focus primarily on observable behavior and evidence rather than emotional language alone. Do not speculate about motivations, intent, or personal characteristics beyond the provided information.
-
-Missing information should not be treated as evidence either for or against the appeal.
-
-If the available evidence is mixed or contradictory, acknowledge the uncertainty explicitly in the recommendation and reasoning.
-
-Consider the overall trajectory of the user's behavior rather than treating isolated minor violations as determinative.
-
-Positive engagement after a ban should be weighed significantly in favor of approval, even if the user had prior rule violations. The goal is not only to identify ongoing problematic behavior, but also to recognize credible evidence of behavioral improvement and willingness to follow subreddit rules going forward.
-
-Avoid treating isolated minor incidents or emotionally charged comments as determinative when the broader pattern of behavior is constructive.
-
-When both positive and negative signals are present, weigh the overall behavioral trend and likelihood of future rule compliance rather than focusing disproportionately on past violations alone.
-
-Maintain a neutral, professional tone.
-
-Provide your advice in the following format:
-
-* A recommendation (single line) of either "Approve", "Deny" or "Not enough information", and a confidence indicator (e.g. words such as "high confidence", "medium confidence", "low confidence").
-* Key factors: three to six bullet points with short sentences summarizing the most important factors that led to your recommendation.
-* Reasoning: Provide concise reasoning in 2–4 paragraphs that explains the recommendation in more detail, referencing specific information from the appeal message, subreddit rules, moderator notes, and user history as necessary.
-
-Confidence should reflect the quality and consistency of the evidence:
-
-* High confidence: strong, consistent evidence supporting the recommendation
-* Medium confidence: mixed or incomplete evidence
-* Low confidence: limited, ambiguous, or conflicting evidence
-
-For the key factors bullet points:
-
-* Be concise and factual rather than speculative
-* Focus on the strongest signals either for or against approval
-
-`;
+    const wikiPage = await reddit.getWikiPage(promptSubreddit, promptWikiPage);
+    return wikiPage.content.trim();
+}
 
 interface PostInfo {
     title: string;
     createdAt: Date;
     url?: string;
-}
-
-function blockquoteText (text: string): string {
-    return text.split("\n").map(line => `> ${line}`).join("\n");
 }
 
 async function getUserHistoryForAppeal (username: string) {
@@ -169,6 +113,10 @@ function getSubredditTerminology (appSettings: SettingsValues): Record<string, s
     return terminology;
 }
 
+function blockquoteText (text: string): string {
+    return text.split("\n").map(line => `> ${line}`).join("\n");
+}
+
 export async function handleAppeal (messageBody: string, modmailMessage: ModmailMessage): Promise<TriggerResponse> {
     console.log(`Handling appeal for conversation ${modmailMessage.conversationId} from participant ${modmailMessage.participant}`);
 
@@ -189,6 +137,7 @@ export async function handleAppeal (messageBody: string, modmailMessage: Modmail
     }
 
     const appSettings = await settings.getAll();
+    const basePrompt = await getBasePrompt(appSettings);
 
     let prompt = `${basePrompt}\n\n## User's appeal message:\n\n${blockquoteText(messageBody)}`;
 

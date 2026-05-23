@@ -6,4 +6,6 @@ export enum AppSetting {
     GlobalAPIKey = "openAPIKey",
     FreeAppealsPerMonth = "freeAppealsPerMonth",
     OpenAIModel = "openAIModel",
+    PromptSubreddit = "promptSubreddit",
+    PromptWikiPage = "promptWikiPage",
 }

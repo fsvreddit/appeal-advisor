@@ -17,7 +17,7 @@ All subreddits get ten free ban appeals per calendar month funded by the develop
 
 ## Source code
 
-Appeal Advisor is open source under the BSD three-clause license. [You can find the source code on Github](https://github.com/fsvreddit/modmailtranslate).
+Appeal Advisor is open source under the BSD three-clause license. [You can find the source code on Github](https://github.com/fsvreddit/appeal-advisor).
 
 ## Fetch Domains
 
