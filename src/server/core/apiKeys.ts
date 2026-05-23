@@ -4,10 +4,14 @@ import { format } from "date-fns";
 
 const LOCAL_API_KEY = "localAPIKey";
 
+export async function removeLocalAPIKey () {
+    await redis.del(LOCAL_API_KEY);
+    console.log("Local API key removed.");
+}
+
 export async function setLocalAPIKey (apiKey: string) {
     if (apiKey.length === 0) {
-        await redis.del(LOCAL_API_KEY);
-        console.log("Local API key removed.");
+        await removeLocalAPIKey();
         return;
     }
 
