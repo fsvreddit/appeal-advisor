@@ -18,8 +18,8 @@
     "node": ">=22.2.0"
   },
   "dependencies": {
-    "@devvit/start": "0.12.23",
-    "@devvit/web": "0.12.23",
+    "@devvit/start": "0.12.24",
+    "@devvit/web": "0.12.24",
     "@fsvreddit/fsv-devvit-web-helpers": "github:fsvreddit/fsv-devvit-web-helpers",
     "@hono/node-server": "^2.0.0",
     "date-fns": "^4.1.0",
@@ -33,7 +33,7 @@
     "@types/lodash": "^4.17.24",
     "@types/node": "^22.19.7",
     "@types/pluralize": "^0.0.33",
-    "devvit": "0.12.23",
+    "devvit": "0.12.24",
     "eslint": "^10.0.0",
     "typescript": "5.8.3",
     "vite": "^8.0.0",

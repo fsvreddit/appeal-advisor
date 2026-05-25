@@ -2,6 +2,7 @@ Appeal Advisor is a Dev Platform app that analyzes user ban appeals to save mode
 
 The app considers:
 
+* The user's appeal message
 * The user's most recent 100 posts and comments
 * The reason the user was banned
 * Any mod notes about the user
@@ -14,6 +15,12 @@ You can summon this app using a username mention in modmail (u/appeal-advisor) i
 The app does not perform unban actions itself, just advises moderators using private moderator notes.
 
 All subreddits get ten free ban appeals per calendar month funded by the developer. If you need more than this, you will need to provide your own OpenAI API key, which you can do through the subreddit's three-dot menu.
+
+Generally speaking, no configuration is required for this app. However if your mod team uses specific terminology or abbreviations in mod notes or elsewhere, this can be provided in the app settings.
+
+Example response:
+
+![Example Response](https://i.redd.it/is2u95dk6a3h1.png)
 
 ## Source code
 
