@@ -110,7 +110,6 @@ export const handleModmail = async (c: Context) => {
             `If you would like Appeal Advisor to analyze this user's appeal, reply to this message with a private note that mentions me in the form \`u/${context.appSlug}\`.`,
             "I'll then respond with an analysis of the user's appeal taking into account their recent history, subreddit rules and mod notes.",
         ].join("\n\n"),
-        isAuthorHidden: true,
     };
 
     await scheduler.runJob({

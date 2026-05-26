@@ -8,7 +8,7 @@ export const handleSendModmailAsync = async (c: Context) => {
     await reddit.modMail.reply({
         conversationId: request.data.conversationId,
         body: request.data.message,
-        isAuthorHidden: request.data.isAuthorHidden,
+        isInternal: true,
     });
 
     return c.json<TaskResponse>({ message: "modmail message sent successfully" }, 200);

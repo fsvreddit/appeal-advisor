@@ -24,5 +24,4 @@ export type CleanupDeletedAccountsData = {
 export type SendModmailAsyncData = {
     conversationId: string;
     message: string;
-    isAuthorHidden: boolean;
 };

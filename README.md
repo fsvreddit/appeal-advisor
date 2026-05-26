@@ -22,6 +22,12 @@ Example response:
 
 ![Example Response](https://i.redd.it/is2u95dk6a3h1.png)
 
+## Change History
+
+### v1.0.1:
+
+* Ensure that the instructional modmail is sent as a private mod note
+
 ## Source code
 
 Appeal Advisor is open source under the BSD three-clause license. [You can find the source code on Github](https://github.com/fsvreddit/appeal-advisor).
