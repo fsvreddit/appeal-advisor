@@ -118,5 +118,5 @@ export const handleModmail = async (c: Context) => {
         data,
     });
 
-    return c.json<TriggerResponse>(await handleAppeal(firstMessageFromParticipant.bodyMarkdown, modmailMessage), 200);
+    return c.json<TriggerResponse>({ message: "modmail message scheduled successfully" }, 200);
 };

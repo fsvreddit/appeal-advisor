@@ -24,9 +24,9 @@ Example response:
 
 ## Change History
 
-### v1.0.1:
+### v1.0.2
 
-* Ensure that the instructional modmail is sent as a private mod note
+* Initial public release
 
 ## Source code
 
